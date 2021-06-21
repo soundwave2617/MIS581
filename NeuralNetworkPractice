@@ -1,0 +1,114 @@
+---
+title: "MIS510 Portfolio Project Option 1"
+author: "Peter Buckheister"
+date: "9/2/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(ISLR)
+library(caTools)
+```
+# Data Mining and Visulization Portfolio Project
+## Credit Data Mining
+```{r}
+# create and summarize initial data frame
+credit.df <- read.csv("C:\\Users\\bucky\\Documents\\GermanCredit.csv")
+str(credit.df)
+summary(credit.df)
+names(credit.df)
+class(credit.df$TELEPHONE)
+min(credit.df$TELEPHONE)
+max(credit.df$TELEPHONE)
+```
+
+## Data Partitioning
+```{r}
+# partition data into training and validation sets
+set.seed(2)
+sample = sample.split(credit.df,SplitRatio = 0.70)
+train_1 = subset(credit.df, sample==TRUE)
+valid_1 = subset(credit.df, sample==FALSE)
+# remove unwanted columns
+train_1 <- train_1[,-c(1)]
+valid_1 <- valid_1[,-c(1)]
+# peek at the training and validation sets, make sure the split looks good
+dim(train_1)
+dim(valid_1)
+```
+
+## Logistic Regression
+### Exploring Logistic Regression on GermanCredit.csv
+```{r}
+# run logistic regression using the glm model
+# convert RESPONSE to categorical variable
+train_1$RESPONSE <- factor(train_1$RESPONSE, levels=c(1,0), labels = c("Strong","Poor"))
+valid_1$RESPONSE <- factor(valid_1$RESPONSE, levels=c(1,0), labels = c("Strong","Poor"))
+# View(train_1) # checking partitions
+# View(valid_1) # checking partitions
+```
+```{r}
+# check for missing data
+nrow(train_1[is.na(train_1$RESPONSE),])
+nrow(valid_1[is.na(valid_1$RESPONSE),])
+```
+```{r}
+#run the glm
+credit_train <- glm(RESPONSE ~ ., data = train_1, family = "binomial")
+options(scipen = 999)
+summary(credit_train)
+```
+#### Scatterplot of RESPONSE Variable
+```{r}
+library(ggplot2)
+library(hrbrthemes)
+hrbrthemes::import_roboto_condensed()
+# run scatterplot to compare AMOUNT to AGE
+```
+**Figure 1**  
+Scatterplot using *ggplot2* to map AMOUNT to AGE for analysis
+```{r}
+ggplot(train_1, aes(x=AMOUNT, y=AGE, size=AMOUNT, color=AMOUNT)) + geom_point(size=6) + theme_ft_rc()
+```
+```{r}
+# run scatterplot to compare AMOUNT to JOB
+```
+**Figure 2**  
+Scatterplot using *ggplot2* to map AMOUNT to JOB for analysis
+```{r}
+ggplot(train_1, aes(x=AMOUNT, y=JOB, size=AMOUNT, color=AMOUNT)) + geom_point(size=6) + theme_ft_rc()
+```
+
+## Neural Networks
+### Exploring Neural Networks with GermanCredit.csv
+```{r}
+library(neuralnet)
+nn <- neuralnet(RESPONSE ~ JOB + HISTORY, data=train_1, linear.output = TRUE, hidden = 4)
+nn$WEIGHTS
+prediction(nn)
+```
+
+**Figure 3**
+Neural network visualization using *plot()*
+```{r}
+plot(nn, rep="best")
+```
+
+# Conclusions
+### Findings During Research
+  
+A learning opportunity presented itself when the function to remove unwanted columns was placed in a code block below and run over and over again while trying to categorically factor the **RESPONSE** variable.  Each time the *View()* function was used to inspect the data frame and the **RESPONSE** variable came up as n/a each time.  An observation was made upon further iterations of viewing the table as the first column would disappear and the column count would go down to one.  Always manipulate the data frame once before testing analytical models.  The data manipulation functions will make permanent changes to the data frame.
+
+### Analysis
+#### Logistic Regression  
+The logistic regression model was run on the **RESPONSE** variable against all other variables in the *train_1* data frame to find the variables that would be the best predictors of the **RESPONSE** variable (Whether the credit rating is strong or poor).  Using *glm()*, the variables **CHK_ACCT**, **HISTORY**, **SAV_ACCT**, and **INSTALL_RATE** were some of the best predictor variables for a strong or poor credit rating.
+
+#### Visualizations  
+Some visualizations were used to gain some insight on the data.  As seen in **Figure 1**, the **AMOUNT** variable was compared to the **AGE** variable.  The plot was created using *ggplot2* and allows some assumptions to made regarding the data.  First, we see that most credit amounts are less than 5000.  Second, we can see that the highest credit belongs to those just over 30 years old, but credit above 12500 is distributed among all age groups.  In **Figure 2**, we compare **AMOUNT** to **JOB** and see that the higher the job level, the more credit is held, and while most job levels have a certain maximum, exceptions do exist.
+
+#### Neural Network  
+A small, feed-forward neural network model was chosen in order to better understand the mechanisms of neural networks without the model becoming too confusing. The variables **JOB** and **HISTORY** were input to predict the **RESPONSE** variable.  In other words, this model will attempt to predict a Strong or Poor credit rating for a person depending on the values of their credit history and the nature if their employment.  Using the *prediciton()* function, some interesting analysis opportunities opened up. We can see immediately, in the first 4 values for **JOB** when compared to **HISTORY** = 0 (a perfect credit history), that a Strong credit rating is predicted regardless of the job level more than 50% of the time (minimum *Strong* response of 56.89%).  Another observation made regarding neural networks is that each time the model is run, the predictions are slightly different, therefore the numbers observed while writing this paragraph may be different than those output during the final knit process and creation of the final document.  
+
